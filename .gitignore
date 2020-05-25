@@ -1,3 +1,14 @@
+*.log
+*.exe
+*.xlsx
+*.png
+TeamG*
+
+.idea
+
+# need to keep this track image since it is read by a script
+!reinvent_track.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
