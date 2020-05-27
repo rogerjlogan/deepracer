@@ -6,7 +6,7 @@ import re
 from collections import namedtuple
 import pandas as pd
 import numpy as np
-from reinvent2018 import target_points
+from data.reinvent2018 import target_points
 
 Row = namedtuple('logs', 'episode, step, x_coord, y_coord, heading, steering, speed, action_taken, reward, '
                          'job_completed, all_wheels_on_track, progress, closest_waypoint_index,'
@@ -31,6 +31,10 @@ class SimLogParser:
         self.logfile = logfile
         self._parse()
         self._aggregate()
+        if len(self.good_episodes):
+            combined_episodes = pd.concat(self.good_episodes) if len(self.good_episodes) > 1 else self.good_episodes
+            combined_episodes.to_excel(f'{self.logfile.rstrip(".log")}.xlsx', index=False)
+        print(self)
 
     def _parse(self):
         in_episode = False
@@ -58,11 +62,11 @@ class SimLogParser:
                             in_episode = False
                             df = pd.DataFrame(data=data)
                             df[numerics] = df[numerics].apply(pd.to_numeric)
+                            df.closest_waypoint_index = df.closest_waypoint_index.mod(70)
                             for b in booleans:
                                 df[b] = df[b].map(truth_map)
                             df[strings] = df[strings].astype(str)
-                            indices = df.closest_waypoint_index.mod(70)
-                            x2, y2 = zip(*np.array(target_points)[indices])
+                            x2, y2 = zip(*np.array(target_points)[df.closest_waypoint_index])
                             best_heading = np.degrees(np.arctan2(y2 - df['y_coord'], x2 - df['x_coord']))
                             df['best_heading'] = best_heading
                             df['direction_diff'] = abs(((best_heading - df['heading']) + 180) % 360 - 180)
@@ -73,7 +77,7 @@ class SimLogParser:
             lap_time = ep.time.iloc[-1] - ep.time.iloc[0]
             if self.verbose:
                 print(f'episode: {ep.episode.iloc[0]}, steps: {ep.step.iloc[-1]}, lap_time={lap_time}')
-            self.plot_pts += zip(ep.x_coord, ep.y_coord, ep.speed, ep.reward)
+            self.plot_pts += zip(ep.x_coord, ep.y_coord, ep.closest_waypoint_index, ep.speed, ep.reward)
             self.lap_times.append(lap_time)
             self.steps.append(ep.step.iloc[-1])
 
@@ -92,13 +96,13 @@ class SimLogParser:
                     f'{min(self.steps)}({self.lap_times[self.steps.index(min(self.steps))]:.2f}s)\n')
             out += (f'\tMax Steps(Lap Time) = '
                     f'{max(self.steps)}({self.lap_times[self.steps.index(max(self.steps))]:.2f}s)\n')
-            combined_episodes = pd.concat(self.good_episodes) if len(self.good_episodes) > 1 else self.good_episodes
-            combined_episodes.to_excel(f'{self.logfile.rstrip(".log")}.xlsx', index=False)
         else:
             out += 'NO DATA COLLECTED !!!!\n'
         return out
 
+    def __getitem__(self, idx):
+        return self.plot_pts[idx]
+
 
 if __name__ == '__main__':
-    slp = SimLogParser('roger-sim-24may.log')
-    print(slp)
+    SimLogParser('roger-sim-24may.log')
