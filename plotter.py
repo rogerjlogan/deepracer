@@ -43,7 +43,7 @@ class Plotter:
             self.plot_pts = SimLogParser(log)
         else:
             self.plot_pts = ()
-        self.get_target_points()
+        self._get_target_points()
         self.plot()
 
     @staticmethod
@@ -119,7 +119,7 @@ class Plotter:
     
         return target_points_
     
-    def get_target_points(self):
+    def _get_target_points(self):
         if self.plot_pts:
             for x, y, idx, _, _ in self.plot_pts:
                 self.target_points += self._generate_targets(idx, *targets_refs[idx], x, y)
@@ -130,9 +130,8 @@ class Plotter:
             assert len(self.target_points) == len(waypoints), (f'Mismatch size: len(waypoints)={len(waypoints)}, '
                                                                f'len(target_points)={len(self.target_points)}')
 
-    def _draw_lines(self, idx, nfp, x=None, y=None):
+    def _draw_lines(self, idx, nfp=None, x=None, y=None):
         plt.plot(all_xs, all_ys, 'bo')
-        print('idx:', idx)
         if nfp is None:
             nfp_xs, nfp_ys = zip(*self.plots[idx].nfp)
             # No plot_pts provided, so simulating car x, y as closest_waypoint[0]
@@ -141,7 +140,6 @@ class Plotter:
         else:
             nfp_xs, nfp_ys = zip(*nfp)
             curr_x, curr_y = x, y
-        print(nfp_xs, nfp_ys)
         # This is closest_waypoint[1]
         plt.plot(nfp_xs[0], nfp_ys[0], 'k*', markersize=12)
 
@@ -229,9 +227,9 @@ class Plotter:
 
 
 if __name__ == '__main__':
-    # Plotter()
-    # Plotter(hide_angles=True)
-    # Plotter(show_all_angles=True)
-    Plotter(log='roger-sim-24may.log', hide_angles=True)  # FIXME: Bug if log is provided and not a heatmap
-    # Plotter(heatmap='Reward', log='roger-sim-24may.log')
-    # Plotter(heatmap='Speed', log='roger-sim-24may.log')
+    Plotter(hide_angles=True)
+    Plotter(show_all_angles=True)
+    Plotter()
+    Plotter(heatmap='Reward', log='roger-sim-24may.log')
+    Plotter(heatmap='Speed', log='roger-sim-24may.log')
+    # Plotter(log='roger-sim-24may.log', hide_angles=True)  # FIXME: Bug if log is provided and not a heatmap
