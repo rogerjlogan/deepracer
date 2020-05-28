@@ -86,16 +86,20 @@ class SimLogParser:
         out += f'\tNumber of "lap_complete" episodes = {len(self.good_episodes)}\n'
         out += f'\tNumber of "off_track" episodes = {self.num_offtracks} ... ignoring for analysis\n'
         if len(self.lap_times):
+            min_time = min(self.lap_times)
+            min_time_idx = self.lap_times.index(min_time)
+            max_time = max(self.lap_times)
+            max_time_idx = self.lap_times.index(max_time)
+            min_step = min(self.steps)
+            min_step_idx = self.steps.index(min_step)
+            max_step = max(self.steps)
+            max_step_idx = self.steps.index(max_step)
             out += f'\tAverage Lap Time = {np.mean(self.lap_times):.2f}s (StdDev: {np.std(self.lap_times):.4f})\n'
-            out += (f'\tMin Lap Time(Steps) = '
-                    f'{min(self.lap_times):.2f}s({self.steps[self.lap_times.index(min(self.lap_times))]})\n')
-            out += (f'\tM)ax Lap Time(Steps)= '
-                    f'{max(self.lap_times):.2f}s({self.steps[self.lap_times.index(max(self.lap_times))]})\n')
+            out += f'\tMin Lap Time(Steps) = {min_time:.2f}s({self.steps[min_time_idx]})\n'
+            out += f'\tMax Lap Time(Steps)= {max_time:.2f}s({self.steps[max_time_idx]})\n'
             out += f'\tAverage # Steps = {np.mean(self.steps):.1f} (StdDev: {np.std(self.steps):.4f})\n'
-            out += (f'\tMin Steps(Lap Time) = '
-                    f'{min(self.steps)}({self.lap_times[self.steps.index(min(self.steps))]:.2f}s)\n')
-            out += (f'\tMax Steps(Lap Time) = '
-                    f'{max(self.steps)}({self.lap_times[self.steps.index(max(self.steps))]:.2f}s)\n')
+            out += f'\tMin Steps(Lap Time) = {min_step}({self.lap_times[min_step_idx]:.2f}s)\n'
+            out += f'\tMax Steps(Lap Time) = {max_step}({self.lap_times[max_step_idx]:.2f}s)\n'
         else:
             out += 'NO DATA COLLECTED !!!!\n'
         return out

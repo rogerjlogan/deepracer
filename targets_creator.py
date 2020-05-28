@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+"""
+
+"""
 from collections import namedtuple
 import math
 import matplotlib.pyplot as plt
@@ -6,6 +10,7 @@ import matplotlib
 from data.reinvent2018 import track, waypoints, targets_refs
 from simlogparser import SimLogParser
 from data.misc import cmap
+from util.math import calc_distance, convert_degree_angle, average, weighted_avg
 
 matplotlib.use('TkAgg')  # Prevents PyCharm from embedding image in IDE
 
@@ -43,18 +48,12 @@ class Plotter:
             self.plot_pts = SimLogParser(log)
         else:
             self.plot_pts = ()
-        self._get_target_points()
+        self.get_target_points()
         self.plot()
 
     @staticmethod
-    def _calc_distance(x1, y1, x2, y2):
-        dist = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-        return dist
-
-    @staticmethod
     def _get_line_coord(heading, length, curr_x, curr_y):
-        if heading > 180:
-            heading -= 360
+        heading = convert_degree_angle(heading)
         endy = curr_y + length * math.sin(math.radians(heading))
         endx = curr_x + length * math.cos(math.radians(heading))
         return [curr_x, endx], [curr_y, endy]
@@ -63,7 +62,7 @@ class Plotter:
         target_points_ = []
         if x is None and y is None:
             # No plot_pts provided, so simulating car x, y as closest_waypoint[0]
-            prev_idx = idx-1 if idx > 0 else len(waypoints)-1
+            prev_idx = (idx - 1) if idx > 0 else (len(waypoints)-1)
             curr_x, curr_y = all_xs[prev_idx], all_ys[prev_idx]
         else:
             curr_x, curr_y = x, y
@@ -76,34 +75,31 @@ class Plotter:
 
         # get x's and y's for next few points
         nfp_xs, nfp_ys = zip(*nfp)
-    
+
         last_point_line, avg_angle_line, wtd_avg_angle_line = None, None, None
         angles = []
         for x, y in nfp[2:]:
             # using 360 degrees (no negative angles), so we can average
             # (can't average pos & neg angles and get meaningful results)
-            r = math.atan2(y - curr_y, x - curr_x)
-            angles.append((r if r > 0 else (2*math.pi + r)) * 360 / (2*math.pi))
-    
-        length = self._calc_distance(curr_x, curr_y, nfp_xs[-1], nfp_ys[-1])
-    
+            angle = convert_degree_angle(math.degrees(math.atan2(y - curr_y, x - curr_x)), pos_neg=False)
+            angles.append(angle)
+
+        length = calc_distance(curr_x, curr_y, nfp_xs[-1], nfp_ys[-1])
+
         if self.show_all_angles or angle_type == 'end':
             last_point_line = ([curr_x, nfp_xs[-1]], [curr_y, nfp_ys[-1]])
             if angle_type == 'end':
                 target_points_.append((nfp_xs[-1], nfp_ys[-1]))
-    
+
         if self.show_all_angles or angle_type == 'avg':
             # average of points
-            avg_best_heading = sum(angles)/len(angles)
+            avg_best_heading = average(angles)
             avg_angle_line = self._get_line_coord(avg_best_heading, length, curr_x, curr_y)
             if angle_type == 'avg':
                 target_points_.append((avg_angle_line[0][1], avg_angle_line[1][1]))
-    
+
         if self.show_all_angles or angle_type == 'wtd_avg':
-            # weighted average of points (using square of indices)
-            sqrs = [float(n**2) for n, _ in enumerate(angles)]
-            weights = [n/sum(sqrs) for n in sqrs]
-            wtd_avg_best_heading = sum([a*w for a, w in zip(angles, weights)])
+            wtd_avg_best_heading = weighted_avg(angles)
             wtd_avg_angle_line = self._get_line_coord(wtd_avg_best_heading, length, curr_x, curr_y)
             if angle_type == 'wtd_avg':
                 target_points_.append((wtd_avg_angle_line[0][1], wtd_avg_angle_line[1][1]))
@@ -116,10 +112,10 @@ class Plotter:
                                 wtd_avg_angle_line=wtd_avg_angle_line,
                                 angle_type=angle_type,
                                 num_points=num_points))
-    
+
         return target_points_
-    
-    def _get_target_points(self):
+
+    def get_target_points(self):
         if self.plot_pts:
             for x, y, idx, _, _ in self.plot_pts:
                 self.target_points += self._generate_targets(idx, *targets_refs[idx], x, y)
@@ -135,7 +131,7 @@ class Plotter:
         if nfp is None:
             nfp_xs, nfp_ys = zip(*self.plots[idx].nfp)
             # No plot_pts provided, so simulating car x, y as closest_waypoint[0]
-            prev_idx = idx - 1 if idx > 0 else len(waypoints) - 1
+            prev_idx = (idx - 1) if idx > 0 else (len(waypoints) - 1)
             curr_x, curr_y = all_xs[prev_idx], all_ys[prev_idx]
         else:
             nfp_xs, nfp_ys = zip(*nfp)
@@ -210,7 +206,7 @@ class Plotter:
     def plot(self):
         fig = plt.figure(num=None, figsize=(20, 15), dpi=80, facecolor='w', edgecolor='k')
         plt.imshow(plt.imread(track), extent=[0, 8, 0, 5.2])
-
+        ax = fig.add_subplot(111)
         if self.heatmap:
             self._draw_heatmap(0)
             fig.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, cmap, ax, fig))
@@ -222,14 +218,13 @@ class Plotter:
             else:
                 self._draw_lines(0)
             fig.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, self.plots, ax, fig))
-        ax = fig.add_subplot(111)
         plt.show()
 
 
 if __name__ == '__main__':
-    Plotter(hide_angles=True)
+    # Plotter(hide_angles=True)
     Plotter(show_all_angles=True)
-    Plotter()
-    Plotter(heatmap='Reward', log='roger-sim-24may.log')
-    Plotter(heatmap='Speed', log='roger-sim-24may.log')
+    # Plotter()
+    # Plotter(heatmap='Reward', log='roger-sim-24may.log')
+    # Plotter(heatmap='Speed', log='roger-sim-24may.log')
     # Plotter(log='roger-sim-24may.log', hide_angles=True)  # FIXME: Bug if log is provided and not a heatmap
