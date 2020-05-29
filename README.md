@@ -1,3 +1,7 @@
+# AWS Deepracer Tools
+These tools are designed to help with planning and creating a reward function for use in AWS Deepracer.
+Also, included are tools for analyzing visually AWS Logs created after a simulation or virtual race.
+
 # Getting AWS logs via CLI
 ### For more documentation on AWSLOGS, go [here](https://github.com/jorgebastida/awslogs)
 
@@ -42,10 +46,11 @@
     ... SIM_TRACE_LOG:116,180,0.9021,2.7571,-54.7038,-30.00,1.33,0,1.5581,True,True,100.0000,54,17.67,1590332245.833309,lap_complete
     ...
     ```
-# Creating Target Points
+# Creating Target Points (TargetCreator)
 Run Targets Creator script to show all 3 possible angles.
 __*targets_refs*__ in data/reinvent2018.py sets all of the selected angles and number of endpoints dependent. 
 These endpoints and angles in __*targets_refs*__ were chosen by using this tool.
+Running this tool will overwrite data/reinvent2018_targets.py which is used by the LogPlotter described below.
 ```bash
     python targets_creator.py -h  # show help menu
     python targets_creator.py  # show best angle (previously selected)
@@ -53,13 +58,14 @@ These endpoints and angles in __*targets_refs*__ were chosen by using this tool.
     python targets_creator.py -hide_angles
 ```
 
-# Plotting AWS Logs
+# Plotting AWS Logs (LogPlotter)
 After downloading AWS log, you can run the LogPlotter to plot log data.
 Either plot a heatmap of rewards / speeds, or you can plot best headings for a group of points and click through each.
+Running these commands runs the SimLogParser which converts the log file into a xlsx file of the same name/location.
 ##### WARNING: Plots make not work correctly in PyCharm. Best if below commands are run from command prompt (Git bash, etc).
 ```bash
     python log_plotter.py -h  # show help menu
-    python log_plotter.py -log 'roger-sim-24may.log' -groupsize 10
-    python log_plotter.py -log 'roger-sim-24may.log' -heatmap reward
-    python log_plotter.py -log 'roger-sim-24may.log' -heatmap speed
+    python log_plotter.py -log 'awslog-sim.log' -groupsize 10
+    python log_plotter.py -log 'awslog-virtual-race.log' -heatmap reward
+    python log_plotter.py -log 'awslog-virtual-race.log' -heatmap speed
 ```
