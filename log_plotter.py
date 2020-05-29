@@ -3,6 +3,7 @@
 Plot either a heatmap (reward or speed) or best headings from actual points in aws log file.
 Examples:
     python log_plotter.py -h  # show help menu
+    python log_plotter.py -log 'awslog-sim.log' -groupsize -1  # show one whole episode per click
     python log_plotter.py -log 'roger-sim-24may.log' -groupsize 10
     python log_plotter.py -log 'roger-sim-24may.log' -heatmap reward
     python log_plotter.py -log 'roger-sim-24may.log' -heatmap speed
@@ -33,16 +34,20 @@ class LogPlotter:
                         If Null, will show angles interactive plot,
                         but if not Null, the it will override self.*_angles below.
         :param groupsize: [int] Number of points per click when plotting lines.  Ignored if heatmap != ''
+                          If -1, this will display all points from one episode at a time (per click).
         """
         self.log = log
         self.heatmap = heatmap
         self.groupsize = groupsize
+        self.curr_episode = None  # only used if groupsize is -1
 
         self.plots = []
         self.curr_pos = 0
         self.plot_dir_right = True
 
-        self.plot_pts = SimLogParser(log)
+        self.parsed_log = SimLogParser(log)
+        self.plot_pts = self.parsed_log.plot_pts
+        self.good_episode_list = tuple(self.parsed_log.good_episode_list)
         self.plot()
 
     def _draw_lines(self, idx):
@@ -50,7 +55,22 @@ class LogPlotter:
         plt.plot(all_xs, all_ys, 'bo')
         # WARNING: This line must match what is PACKED UPSTREAM in SimLogParser (simlogparser.py)
         ep_start, stp_start, wpi_start = None, None, None
-        for episode, step, x, y, nearest_waypoint_idx, _, _ in self.plot_pts[idx:idx + self.groupsize]:
+        if self.groupsize == -1:
+            # get one whole episode
+            episode_key = self.good_episode_list[idx]
+            assert isinstance(episode_key, int), f"Bad value for episode:{episode_key}"
+            plot_pts = ((episode, step, x, y, nearest_waypoint_idx)
+                        for episode, step, x, y, nearest_waypoint_idx, _, _
+                        in self.plot_pts if episode == episode_key)
+        else:
+            plot_pts = ((episode, step, x, y, nearest_waypoint_idx)
+                        for (episode, step, x, y, nearest_waypoint_idx, _, _)
+                        in self.plot_pts[idx:idx + self.groupsize])
+            if self.plot_dir_right:
+                self.curr_pos += self.groupsize
+            else:
+                self.curr_pos -= self.groupsize
+        for episode, step, x, y, nearest_waypoint_idx in plot_pts:
             x2, y2 = target_points[nearest_waypoint_idx]
             plt.plot((x, x2), (y, y2), 'g-', linewidth=1)
             plt.plot(x, y, 'rs', markersize=12)
@@ -70,11 +90,6 @@ class LogPlotter:
         plt.text(1.7, 1.8, f'First point nearest waypoint index: {wpi_start}', fontsize=12)
 
         plt.text(2.0, 1.6, 'Click right/left arrow to cycle through next point(s).', fontsize=12)
-
-        if self.plot_dir_right:
-            self.curr_pos += self.groupsize
-        else:
-            self.curr_pos -= self.groupsize
 
     def _draw_heatmap(self, idx):
         # WARNING: This line must match what is PACKED UPSTREAM in SimLogParser (simlogparser.py)
@@ -140,8 +155,10 @@ if __name__ == '__main__':
     parser.add_argument('-log', type=valid_aws_log_file, required=True,
                         help="AWS Log file containing 'SIM_TRACE_LOG' and 'Reset'")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-groupsize', type=int, default=1, help="Group size to show log points and their headings one "
-                                                               "group per click. Ignored if heatmap != ''")
+    group.add_argument('-groupsize', type=int, default=1,
+                       help="Group size to show log points and their headings one group per click. "
+                            "Ignored if heatmap != ''. If -1, this will display all points from one "
+                            "episode at a time (per click).")
     group.add_argument('-heatmap', type=valid_heatmap, default='',
                        help="Valid options: '', 'Speed', 'Reward'. If '' (null) then points/headings will be plotted")
     args = parser.parse_args()

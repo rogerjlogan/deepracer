@@ -23,11 +23,12 @@ PlotPts = namedtuple('PlotPts', 'x y speed reward')
 
 class SimLogParser:
 
-    def __init__(self, logfile='aws.log', verbose=False):
+    def __init__(self, logfile='aws.log', verbose=True):
         self.logfile = logfile
         self.verbose = verbose
         self.num_offtracks = 0
         self.good_episodes, self.lap_times, self.steps, self.plot_pts = [], [], [], []
+        self.good_episode_list = set()
         self.logfile = logfile
         self._parse()
         self._aggregate()
@@ -81,7 +82,7 @@ class SimLogParser:
             # WARNING: This line must match what is UNPACKED DOWNSTREAM in LogPlotter (log_plotter.py)
             self.plot_pts += zip(ep.episode, ep.step, ep.x_coord, ep.y_coord, ep.closest_waypoint_index, ep.speed,
                                  ep.reward)
-
+            self.good_episode_list.update(tuple(ep.episode))
             self.lap_times.append(lap_time)
             self.steps.append(ep.step.iloc[-1])
 
@@ -107,12 +108,6 @@ class SimLogParser:
         else:
             out += 'NO DATA COLLECTED !!!!\n'
         return out
-
-    def __getitem__(self, idx):
-        return self.plot_pts[idx]
-
-    def __len__(self):
-        return len(self.plot_pts)
 
 
 if __name__ == '__main__':
