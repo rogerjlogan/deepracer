@@ -77,7 +77,11 @@ class SimLogParser:
             lap_time = ep.time.iloc[-1] - ep.time.iloc[0]
             if self.verbose:
                 print(f'episode: {ep.episode.iloc[0]}, steps: {ep.step.iloc[-1]}, lap_time={lap_time}')
-            self.plot_pts += zip(ep.x_coord, ep.y_coord, ep.closest_waypoint_index, ep.speed, ep.reward)
+
+            # WARNING: This line must match what is UNPACKED DOWNSTREAM in LogPlotter (log_plotter.py)
+            self.plot_pts += zip(ep.episode, ep.step, ep.x_coord, ep.y_coord, ep.closest_waypoint_index, ep.speed,
+                                 ep.reward)
+
             self.lap_times.append(lap_time)
             self.steps.append(ep.step.iloc[-1])
 

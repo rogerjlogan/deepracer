@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 """
 Tool to help determine best target points for each closest waypoint.
+Up to 3 angles can be shown (car position is simulated as waypoint before nearest waypoint):
+  1. From car to some waypoint (endpoint) in distance.
+  2. Average angle of a line to all waypoints in the next few points.
+  3. Weighted average of a line to all waypoints in the next few points.
+Examples:
+    python targets_creator.py -h  # show help menu
+    python targets_creator.py  # show best angle (previously selected)
+    python targets_creator.py -show_all_angles
+    python targets_creator.py -hide_angles
 """
 import os
 from collections import namedtuple
 import math
+from argparse import ArgumentParser, RawTextHelpFormatter
 import matplotlib.pyplot as plt
 from pprint import pprint
 
@@ -175,6 +185,12 @@ class TargetCreator:
 
 
 if __name__ == '__main__':
-    # TargetCreator(hide_angles=True)
-    # TargetCreator(show_all_angles=True)
-    TargetCreator()
+    parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-hide_angles', action='store_true', default=False,
+                       help="If provided, will only show plot points.")
+    group.add_argument('-show_all_angles', action='store_true', default=False,
+                       help="If provided, will show all 3 angles. "
+                            "If not, will only show best (previously selected) angle")
+    args = parser.parse_args()
+    TargetCreator(hide_angles=args.hide_angles, show_all_angles=args.show_all_angles)

@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """
 Plot either a heatmap (reward or speed) or best headings from actual points in aws log file.
+Examples:
+    python log_plotter.py -h  # show help menu
+    python log_plotter.py -log 'roger-sim-24may.log' -groupsize 10
+    python log_plotter.py -log 'roger-sim-24may.log' -heatmap reward
+    python log_plotter.py -log 'roger-sim-24may.log' -heatmap speed
 """
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser, ArgumentTypeError, RawTextHelpFormatter
 from collections import namedtuple
 import matplotlib.pyplot as plt
 
@@ -42,15 +47,27 @@ class LogPlotter:
 
     def _draw_lines(self, idx):
         plt.autoscale(False)
-        # unpack must match SimLogParser row write items
-        for x, y, nearest_waypoint_idx, _, _ in self.plot_pts[idx:idx + self.groupsize]:
+        plt.plot(all_xs, all_ys, 'bo')
+        # WARNING: This line must match what is PACKED UPSTREAM in SimLogParser (simlogparser.py)
+        ep_start, stp_start, wpi_start = None, None, None
+        for episode, step, x, y, nearest_waypoint_idx, _, _ in self.plot_pts[idx:idx + self.groupsize]:
             x2, y2 = target_points[nearest_waypoint_idx]
             plt.plot((x, x2), (y, y2), 'g-', linewidth=1)
             plt.plot(x, y, 'rs', markersize=12)
             # This is closest_waypoint[1]
             nwp_x, nwp_y = waypoints[nearest_waypoint_idx]
             plt.plot(nwp_x, nwp_y, 'k*', markersize=12)
-        plt.text(1.4, 2.8, f'Groupsize: {self.groupsize}', fontsize=24)
+            if ep_start is None:
+                ep_start = episode
+                stp_start = step
+                wpi_start = nearest_waypoint_idx
+        plt.text(1.4, 2.8, f'Nearest Waypoint(black star)', fontsize=24)
+        plt.text(1.4, 2.6, f'Log position of Car(red square)', fontsize=24)
+        plt.text(1.4, 2.4, f'Groupsize: {self.groupsize}', fontsize=24)
+
+        plt.text(1.7, 1.9, f'First point episode: {ep_start}', fontsize=12)
+        plt.text(1.7, 1.8, f'First point step: {stp_start}', fontsize=12)
+        plt.text(1.7, 2.0, f'First point nearest waypoint index: {wpi_start}', fontsize=12)
 
         if self.plot_dir_right:
             self.curr_pos += self.groupsize
@@ -58,18 +75,19 @@ class LogPlotter:
             self.curr_pos -= self.groupsize
 
     def _draw_heatmap(self, idx):
-        d_xs, d_ys, _, d_speeds, d_rewards = zip(*self.plot_pts)
+        # WARNING: This line must match what is PACKED UPSTREAM in SimLogParser (simlogparser.py)
+        _, _, xs, ys, _, d_speeds, d_rewards = zip(*self.plot_pts)
         plt.text(2.5, 3.2, f'cmap: {cmap[idx]}', fontsize=16)
         plt.text(2.5, 3.0, f'{self.heatmap} HEATMAP', fontsize=16)
         plt.text(2.2, 2.8, '<--- Smallest to Biggest -->', fontsize=16)
         if self.heatmap.lower() == 'reward':
             plt.scatter([2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4],
                         [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5], s=24, c=range(0, 10), cmap=cmap[idx])
-            plt.scatter(d_xs, d_ys, s=1, c=d_rewards, cmap=cmap[idx])
+            plt.scatter(xs, ys, s=1, c=d_rewards, cmap=cmap[idx])
         elif self.heatmap.lower() == 'speed':
             plt.scatter([2.9, 3.0, 3.1],
                         [2.5, 2.5, 2.5], s=24, c=range(0, 3), cmap=cmap[idx])
-            plt.scatter(d_xs, d_ys, s=1, c=d_speeds, cmap=cmap[idx])
+            plt.scatter(xs, ys, s=1, c=d_speeds, cmap=cmap[idx])
         else:
             raise ValueError(
                 f"Invalid constant value. self.heatmap='{self.heatmap}'. Value must be '', 'Reward', or 'Speed'")
@@ -115,8 +133,7 @@ def valid_heatmap(heatmap):
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description='Plot either a heatmap (reward or speed) or '
-                                        'best headings from actual points in aws log file.')
+    parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
     parser.add_argument('-log', type=valid_aws_log_file, required=True,
                         help="AWS Log file containing 'SIM_TRACE_LOG' and 'Reset'")
     group = parser.add_mutually_exclusive_group()
@@ -125,5 +142,4 @@ if __name__ == '__main__':
     group.add_argument('-heatmap', type=valid_heatmap, default='',
                        help="Valid options: '', 'Speed', 'Reward'. If '' (null) then points/headings will be plotted")
     args = parser.parse_args()
-
     LogPlotter(log=args.log, groupsize=args.groupsize, heatmap=args.heatmap)

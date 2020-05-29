@@ -1,7 +1,12 @@
 # Getting AWS logs via CLI
 ### For more documentation on AWSLOGS, go [here](https://github.com/jorgebastida/awslogs)
 
-1. Prevents Git bash (MINGW64) from converting args to full windows path. 
+1. Install AWSLOGS in python3 environment
+    ```bash
+    pip install awslogs
+    ```
+
+2. Prevents Git bash (MINGW64) from converting args to full windows path. 
    Example: /aws/robomaker/SimulationJobs gets changed to something like 
    C:/User/Roger/aws/robomaker/SimulationJobs
     ```bash
@@ -9,13 +14,13 @@
     export MSYS_NO_PATHCONV=1
     ```
 
-2. How to get name of stream from the GROUP in CLI. Only works for __*active*__ streams. 
+3. How to get name of stream from the GROUP in CLI. Only works for __*active*__ streams. 
    To get streams that have already completed, goto AWS Deepracer Console to get name.
     ```bash
     awslogs streams /aws/robomaker/SimulationJobs --profile adfs
     ```
 
-3. Example of pulling logs.  Get the stream name either from the command above or from AWS Deepracer Console. 
+4. Example of pulling logs.  Get the stream name either from the command above or from AWS Deepracer Console. 
    This will pull all data from a log in the last hour matching either "Reset" or SIM_TRACE_LOG 
    * NOTE: "Reset agent" signifies start of an episode (lap or partial lap)
     ```bash
@@ -37,4 +42,23 @@
     ... SIM_TRACE_LOG:116,180,0.9021,2.7571,-54.7038,-30.00,1.33,0,1.5581,True,True,100.0000,54,17.67,1590332245.833309,lap_complete
     ...
     ```
-# Parsing AWS logs
+# Creating Target Points
+Run Targets Creator script to show all 3 possible angles.
+__*targets_refs*__ in data/reinvent2018.py sets all of the selected angles and number of endpoints dependent. 
+These endpoints and angles in __*targets_refs*__ were chosen by using this tool.
+```bash
+    python targets_creator.py -h  # show help menu
+    python targets_creator.py  # show best angle (previously selected)
+    python targets_creator.py -show_all_angles
+    python targets_creator.py -hide_angles
+```
+
+# Plotting AWS Logs
+After downloading AWS log, you can run the LogPlotter to plot log data.
+Either plot a heatmap of rewards / speeds, or you can plot best headings for a group of points and click through each.
+```bash
+    python log_plotter.py -h  # show help menu
+    python log_plotter.py -log 'roger-sim-24may.log' -groupsize 10
+    python log_plotter.py -log 'roger-sim-24may.log' -heatmap reward
+    python log_plotter.py -log 'roger-sim-24may.log' -heatmap speed
+```
