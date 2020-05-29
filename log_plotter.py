@@ -65,9 +65,11 @@ class LogPlotter:
         plt.text(1.4, 2.6, f'Log position of Car(red square)', fontsize=24)
         plt.text(1.4, 2.4, f'Groupsize: {self.groupsize}', fontsize=24)
 
-        plt.text(1.7, 1.9, f'First point episode: {ep_start}', fontsize=12)
-        plt.text(1.7, 1.8, f'First point step: {stp_start}', fontsize=12)
-        plt.text(1.7, 2.0, f'First point nearest waypoint index: {wpi_start}', fontsize=12)
+        plt.text(1.7, 2.0, f'First point episode: {ep_start}', fontsize=12)
+        plt.text(1.7, 1.9, f'First point step: {stp_start}', fontsize=12)
+        plt.text(1.7, 1.8, f'First point nearest waypoint index: {wpi_start}', fontsize=12)
+
+        plt.text(2.0, 1.6, 'Click right/left arrow to cycle through next point(s).', fontsize=12)
 
         if self.plot_dir_right:
             self.curr_pos += self.groupsize
@@ -91,6 +93,7 @@ class LogPlotter:
         else:
             raise ValueError(
                 f"Invalid constant value. self.heatmap='{self.heatmap}'. Value must be '', 'Reward', or 'Speed'")
+        plt.text(2.0, 2.0, 'Click right/left arrow to cycle through color maps.', fontsize=12)
         plt.plot(all_xs, all_ys, 'bo')
 
     def key_event(self, e, items, ax, fig):

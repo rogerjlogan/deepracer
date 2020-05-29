@@ -153,6 +153,7 @@ class TargetCreator:
         plt.text(1.8, 2.0, f'Angle Type/# of Points={self.plots[idx].angle_type}/'
                            f'{self.plots[idx].num_points}', fontsize=24)
         plt.text(1.8, 1.8, 'Note: Using point before waypoint to simulate position of car.', fontsize=16)
+        plt.text(2.0, 1.6, 'Click right/left arrow to cycle through next point.', fontsize=12)
 
     def key_event(self, e, items, ax, fig):
         if e.key == "right":

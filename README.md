@@ -56,6 +56,7 @@ These endpoints and angles in __*targets_refs*__ were chosen by using this tool.
 # Plotting AWS Logs
 After downloading AWS log, you can run the LogPlotter to plot log data.
 Either plot a heatmap of rewards / speeds, or you can plot best headings for a group of points and click through each.
+##### WARNING: Plots make not work correctly in PyCharm. Best if below commands are run from command prompt (Git bash, etc).
 ```bash
     python log_plotter.py -h  # show help menu
     python log_plotter.py -log 'roger-sim-24may.log' -groupsize 10
