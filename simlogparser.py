@@ -107,6 +107,9 @@ class SimLogParser:
     def __getitem__(self, idx):
         return self.plot_pts[idx]
 
+    def __len__(self):
+        return len(self.plot_pts)
+
 
 if __name__ == '__main__':
     SimLogParser('roger-sim-24may.log')

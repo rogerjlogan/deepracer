@@ -1,55 +1,43 @@
 #!/usr/bin/env python3
 """
-
+Tool to help determine best target points for each closest waypoint.
 """
+import os
 from collections import namedtuple
 import math
 import matplotlib.pyplot as plt
-import matplotlib
+from pprint import pprint
 
 from data.reinvent2018 import track, waypoints, targets_refs
-from simlogparser import SimLogParser
-from data.misc import cmap
 from util.math import calc_distance, convert_degree_angle, average, weighted_avg
 
-matplotlib.use('TkAgg')  # Prevents PyCharm from embedding image in IDE
-
 Plots = namedtuple('Plots', 'nfp, idx, last_point_line, avg_angle_line, wtd_avg_angle_line, angle_type, num_points')
-
 
 all_xs, all_ys = zip(*waypoints)
 
 
-class Plotter:
-    def __init__(self, heatmap='', hide_angles=False, show_all_angles=False, log=''):
+class TargetCreator:
+    def __init__(self, hide_angles=False, show_all_angles=False,
+                 targets_log=os.path.join('data', 'reinvent2018_targets.py')):
         """
-        :param heatmap: [string] Options: '', 'Reward', 'Speed'
-                        If Null, will show angles interactive plot,
-                        but if not Null, the it will override self.*_angles below.
         :param hide_angles: [bool] If True, this will override self.show_all_angles!!
         :param show_all_angles: [bool] Displays all 3 angles used to decide which is best.
                                 If True, will show avg, wtd_avg, and endpoint angles from point
                                 before first point (aka car), but if False, will only show angle type specified
                                 in targets_refs for that index.
-        :param log: [string] Name of log file to pull data from.  Will use actual position with car for given episode.
+        :param targets_log: [string] OUTPUT file for WRITING target_points: tuple of target points (one per waypoint)
         """
-        self.heatmap = heatmap
         self.hide_angles = hide_angles
-
         self.show_all_angles = show_all_angles
-
-        self.log = log
+        self.targets_log = targets_log
 
         self.plots = []
-        self.target_points = []
+        self.target_points = []  # list for buildup, but written to file as tuple
         self.curr_pos = 0
 
-        if self.log:
-            self.plot_pts = SimLogParser(log)
-        else:
-            self.plot_pts = ()
         self.get_target_points()
         self.plot()
+        self.write_targets_file()
 
     @staticmethod
     def _get_line_coord(heading, length, curr_x, curr_y):
@@ -116,26 +104,19 @@ class Plotter:
         return target_points_
 
     def get_target_points(self):
-        if self.plot_pts:
-            for x, y, idx, _, _ in self.plot_pts:
-                self.target_points += self._generate_targets(idx, *targets_refs[idx], x, y)
-        else:
-            for idx, _ in enumerate(waypoints):
-                self.target_points += self._generate_targets(idx, *targets_refs[idx])
-            print('target_points =', self.target_points)
-            assert len(self.target_points) == len(waypoints), (f'Mismatch size: len(waypoints)={len(waypoints)}, '
-                                                               f'len(target_points)={len(self.target_points)}')
+        for idx, _ in enumerate(waypoints):
+            self.target_points += self._generate_targets(idx, *targets_refs[idx])
+        assert len(self.target_points) == len(waypoints), (f'Mismatch size: len(waypoints)={len(waypoints)}, '
+                                                           f'len(target_points)={len(self.target_points)}')
 
-    def _draw_lines(self, idx, nfp=None, x=None, y=None):
+    def _draw_lines(self, idx):
         plt.plot(all_xs, all_ys, 'bo')
-        if nfp is None:
-            nfp_xs, nfp_ys = zip(*self.plots[idx].nfp)
-            # No plot_pts provided, so simulating car x, y as closest_waypoint[0]
-            prev_idx = (idx - 1) if idx > 0 else (len(waypoints) - 1)
-            curr_x, curr_y = all_xs[prev_idx], all_ys[prev_idx]
-        else:
-            nfp_xs, nfp_ys = zip(*nfp)
-            curr_x, curr_y = x, y
+
+        nfp_xs, nfp_ys = zip(*self.plots[idx].nfp)
+        # simulating car x, y as closest_waypoint[0]
+        prev_idx = (idx - 1) if idx > 0 else (len(waypoints) - 1)
+        curr_x, curr_y = all_xs[prev_idx], all_ys[prev_idx]
+
         # This is closest_waypoint[1]
         plt.plot(nfp_xs[0], nfp_ys[0], 'k*', markersize=12)
 
@@ -163,24 +144,6 @@ class Plotter:
                            f'{self.plots[idx].num_points}', fontsize=24)
         plt.text(1.8, 1.8, 'Note: Using point before waypoint to simulate position of car.', fontsize=16)
 
-    def _draw_heatmap(self, idx):
-        d_xs, d_ys, _, d_speeds, d_rewards = zip(*self.plot_pts)
-        plt.text(2.5, 3.2, f'cmap: {cmap[idx]}', fontsize=16)
-        plt.text(2.5, 3.0, f'{self.heatmap} HEATMAP', fontsize=16)
-        plt.text(2.2, 2.8, '<--- Smallest to Biggest -->', fontsize=16)
-        if self.heatmap.lower() == 'reward':
-            plt.scatter([2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4],
-                        [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5], s=24, c=range(0, 10), cmap=cmap[idx])
-            plt.scatter(d_xs, d_ys, s=1, c=d_rewards, cmap=cmap[idx])
-        elif self.heatmap.lower() == 'speed':
-            plt.scatter([2.9, 3.0, 3.1],
-                        [2.5, 2.5, 2.5], s=24, c=range(0, 3), cmap=cmap[idx])
-            plt.scatter(d_xs, d_ys, s=1, c=d_speeds, cmap=cmap[idx])
-        else:
-            raise ValueError(
-                f"Invalid constant value. self.heatmap='{self.heatmap}'. Value must be '', 'Reward', or 'Speed'")
-        plt.plot(all_xs, all_ys, 'bo')
-
     def key_event(self, e, items, ax, fig):
         if e.key == "right":
             self.curr_pos += 1
@@ -192,39 +155,26 @@ class Plotter:
 
         ax.cla()
         plt.imshow(plt.imread(track), extent=[0, 8, 0, 5.2])
-        if self.heatmap:
-            self._draw_heatmap(self.curr_pos)
-        else:
-            if self.plot_pts:
-                curr_plots = self.plots[self.curr_pos]
-                x, y, idx, speed, reward = self.plot_pts[curr_plots.idx]
-                self._draw_lines(curr_plots.idx, curr_plots.nfp, x, y)
-            else:
-                self._draw_lines(self.curr_pos)
+        self._draw_lines(self.curr_pos)
         fig.canvas.draw()
 
     def plot(self):
         fig = plt.figure(num=None, figsize=(20, 15), dpi=80, facecolor='w', edgecolor='k')
         plt.imshow(plt.imread(track), extent=[0, 8, 0, 5.2])
         ax = fig.add_subplot(111)
-        if self.heatmap:
-            self._draw_heatmap(0)
-            fig.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, cmap, ax, fig))
-        else:
-            if self.plot_pts:
-                curr_plots = self.plots[0]
-                x, y, idx, speed, reward = self.plot_pts[curr_plots.idx]
-                self._draw_lines(curr_plots.idx, curr_plots.nfp, x, y)
-            else:
-                self._draw_lines(0)
-            fig.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, self.plots, ax, fig))
+        self._draw_lines(0)
+        fig.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, self.plots, ax, fig))
         plt.show()
+
+    def write_targets_file(self):
+        with open(self.targets_log, 'w') as out:
+            out.write('#!/usr/bin/env python3\n')
+            out.write(f'# This file was generated by {os.path.basename(__file__)}\n\n')
+            out.write('target_points = ')
+            pprint(tuple(self.target_points), stream=out)
 
 
 if __name__ == '__main__':
-    # Plotter(hide_angles=True)
-    Plotter(show_all_angles=True)
-    # Plotter()
-    # Plotter(heatmap='Reward', log='roger-sim-24may.log')
-    # Plotter(heatmap='Speed', log='roger-sim-24may.log')
-    # Plotter(log='roger-sim-24may.log', hide_angles=True)  # FIXME: Bug if log is provided and not a heatmap
+    # TargetCreator(hide_angles=True)
+    # TargetCreator(show_all_angles=True)
+    TargetCreator()
