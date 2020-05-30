@@ -60,22 +60,27 @@ class LogPlotter:
             # get one whole episode
             episode_key = self.good_episode_list[idx]
             assert isinstance(episode_key, int), f"Bad value for episode:{episode_key}"
-            plot_pts = ((episode, step, x, y, nearest_waypoint_idx)
-                        for episode, step, x, y, nearest_waypoint_idx, _, _
+            plot_pts = ((episode, step, x, y, nearest_waypoint_idx, speed)
+                        for episode, step, x, y, nearest_waypoint_idx, speed, _
                         in self.plot_pts if episode == episode_key)
             plt.text(2.5, 1.3, self.episode_data[episode_key], fontsize=12)
         else:
-            plot_pts = ((episode, step, x, y, nearest_waypoint_idx)
-                        for (episode, step, x, y, nearest_waypoint_idx, _, _)
+            plot_pts = ((episode, step, x, y, nearest_waypoint_idx, speed)
+                        for (episode, step, x, y, nearest_waypoint_idx, speed, _)
                         in self.plot_pts[idx:idx + self.groupsize])
             if self.plot_dir_right:
                 self.curr_pos += self.groupsize
             else:
                 self.curr_pos -= self.groupsize
-        for episode, step, x, y, nearest_waypoint_idx in plot_pts:
+        for episode, step, x, y, nearest_waypoint_idx, speed in plot_pts:
             x2, y2 = target_points[nearest_waypoint_idx]
-            plt.plot((x, x2), (y, y2), 'g-', linewidth=1)
-            plt.plot(x, y, 'rs', markersize=12)
+            plt.plot((x, x2), (y, y2), 'c--', linewidth=1)
+            if speed > 3.9:
+                plt.plot(x, y, 'gs', markersize=12)
+            elif speed > 2:
+                plt.plot(x, y, 'ys', markersize=12)
+            else:
+                plt.plot(x, y, 'rs', markersize=12)
             # This is closest_waypoint[1]
             nwp_x, nwp_y = waypoints[nearest_waypoint_idx]
             plt.plot(nwp_x, nwp_y, 'k*', markersize=12)

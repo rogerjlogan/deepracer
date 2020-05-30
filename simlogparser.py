@@ -35,6 +35,7 @@ class SimLogParser:
         self._aggregate()
         if len(self.good_episodes):
             combined_episodes = pd.concat(self.good_episodes) if len(self.good_episodes) > 1 else self.good_episodes
+            combined_episodes = pd.DataFrame(combined_episodes)
             combined_episodes.to_excel(f'{self.logfile.rstrip(".log")}.xlsx', index=False)
         if verbose:
             pprint(self.episode_data)
