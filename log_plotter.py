@@ -45,9 +45,10 @@ class LogPlotter:
         self.curr_pos = 0
         self.plot_dir_right = True
 
-        self.parsed_log = SimLogParser(log)
+        self.parsed_log = SimLogParser(log, verbose=True)
         self.plot_pts = self.parsed_log.plot_pts
         self.good_episode_list = tuple(self.parsed_log.good_episode_list)
+        self.episode_data = self.parsed_log.episode_data
         self.plot()
 
     def _draw_lines(self, idx):
@@ -62,6 +63,7 @@ class LogPlotter:
             plot_pts = ((episode, step, x, y, nearest_waypoint_idx)
                         for episode, step, x, y, nearest_waypoint_idx, _, _
                         in self.plot_pts if episode == episode_key)
+            plt.text(2.5, 1.3, self.episode_data[episode_key], fontsize=12)
         else:
             plot_pts = ((episode, step, x, y, nearest_waypoint_idx)
                         for (episode, step, x, y, nearest_waypoint_idx, _, _)

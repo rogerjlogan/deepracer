@@ -6,6 +6,7 @@ import re
 from collections import namedtuple
 import pandas as pd
 import numpy as np
+from pprint import pprint
 from data.reinvent2018 import target_points
 
 Row = namedtuple('logs', 'episode, step, x_coord, y_coord, heading, steering, speed, action_taken, reward, '
@@ -23,18 +24,20 @@ PlotPts = namedtuple('PlotPts', 'x y speed reward')
 
 class SimLogParser:
 
-    def __init__(self, logfile='aws.log', verbose=True):
+    def __init__(self, logfile='aws.log', verbose=False):
         self.logfile = logfile
-        self.verbose = verbose
         self.num_offtracks = 0
         self.good_episodes, self.lap_times, self.steps, self.plot_pts = [], [], [], []
         self.good_episode_list = set()
         self.logfile = logfile
+        self.episode_data = {}
         self._parse()
         self._aggregate()
         if len(self.good_episodes):
             combined_episodes = pd.concat(self.good_episodes) if len(self.good_episodes) > 1 else self.good_episodes
             combined_episodes.to_excel(f'{self.logfile.rstrip(".log")}.xlsx', index=False)
+        if verbose:
+            pprint(self.episode_data)
         print(self)
 
     def _parse(self):
@@ -76,8 +79,9 @@ class SimLogParser:
     def _aggregate(self):
         for ep in self.good_episodes:
             lap_time = ep.time.iloc[-1] - ep.time.iloc[0]
-            if self.verbose:
-                print(f'episode: {ep.episode.iloc[0]}, steps: {ep.step.iloc[-1]}, lap_time={lap_time}')
+            ep_num = ep.episode.iloc[0]
+            if ep_num not in self.episode_data:
+                self.episode_data[ep_num] = f'total steps: {ep.step.iloc[-1]}, lap_time={lap_time:.3f}s'
 
             # WARNING: This line must match what is UNPACKED DOWNSTREAM in LogPlotter (log_plotter.py)
             self.plot_pts += zip(ep.episode, ep.step, ep.x_coord, ep.y_coord, ep.closest_waypoint_index, ep.speed,
