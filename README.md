@@ -65,7 +65,7 @@ Running these commands runs the SimLogParser which converts the log file into a 
 ##### WARNING: Plots make not work correctly in PyCharm. Best if below commands are run from command prompt (Git bash, etc).
 ```bash
     python log_plotter.py -h  # show help menu
-    python log_plotter.py -log 'awslog-sim.log' -groupsize -1  # show one whole episode per click
+    python log_plotter.py -log 'awslog-sim.log' -groupsize -1  # [default] show one whole episode per click
     python log_plotter.py -log 'awslog-sim.log' -groupsize 10
     python log_plotter.py -log 'awslog-virtual-race.log' -heatmap reward
     python log_plotter.py -log 'awslog-virtual-race.log' -heatmap speed

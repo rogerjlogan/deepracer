@@ -27,7 +27,7 @@ all_xs, all_ys = zip(*waypoints)
 
 
 class LogPlotter:
-    def __init__(self, log, heatmap='', groupsize=1):
+    def __init__(self, log, heatmap='', groupsize=-1):
         """
         :param log: [string] Name of log file to pull data from.  Will use actual position with car for given episode.
         :param heatmap: [string] Options: '', 'Reward', 'Speed'
@@ -85,16 +85,19 @@ class LogPlotter:
             nwp_x, nwp_y = waypoints[nearest_waypoint_idx]
             plt.plot(nwp_x, nwp_y, 'k*', markersize=12)
             if ep_start is None:
+                plt.text(2.5, 1.3, self.episode_data[episode], fontsize=12)
                 ep_start = episode
                 stp_start = step
                 wpi_start = nearest_waypoint_idx
-        plt.text(1.4, 2.8, f'Nearest Waypoint(black star)', fontsize=24)
-        plt.text(1.4, 2.6, f'Log position of Car(red square)', fontsize=24)
-        plt.text(1.4, 2.4, f'Groupsize: {self.groupsize}', fontsize=24)
+        plt.text(1.5, 2.6, f'Nearest Waypoint(black star)', fontsize=12)
+        plt.text(1.5, 2.5, f'Log position of Car (square)', fontsize=12)
+        plt.text(1.5, 2.4, f'square: green=fast (> 3.9 m/s), yellow=medium, red=slow (<= 2 m/s)', fontsize=12)
+        explain = '(displaying entire episode)' if self.groupsize == -1 else ''
+        plt.text(1.5, 2.3, f'Groupsize: {self.groupsize} {explain}', fontsize=12)
 
-        plt.text(1.7, 2.0, f'First point episode: {ep_start}', fontsize=12)
-        plt.text(1.7, 1.9, f'First point step: {stp_start}', fontsize=12)
-        plt.text(1.7, 1.8, f'First point nearest waypoint index: {wpi_start}', fontsize=12)
+        plt.text(1.5, 2.2, f'First point episode: {ep_start}', fontsize=12)
+        plt.text(1.5, 2.1, f'First point step: {stp_start}', fontsize=12)
+        plt.text(1.5, 2.0, f'First point nearest waypoint index: {wpi_start}', fontsize=12)
 
         plt.text(2.0, 1.6, 'Click right/left arrow to cycle through next point(s).', fontsize=12)
 
@@ -162,7 +165,7 @@ if __name__ == '__main__':
     parser.add_argument('-log', type=valid_aws_log_file, required=True,
                         help="AWS Log file containing 'SIM_TRACE_LOG' and 'Reset'")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-groupsize', type=int, default=1,
+    group.add_argument('-groupsize', type=int, default=-1,
                        help="Group size to show log points and their headings one group per click. "
                             "Ignored if heatmap != ''. If -1, this will display all points from one "
                             "episode at a time (per click).")
