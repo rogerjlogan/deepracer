@@ -3,10 +3,10 @@
 Plot either a heatmap (reward or speed) or best headings from actual points in aws log file.
 Examples:
     python log_plotter.py -h  # show help menu
-    python log_plotter.py -log 'awslog-sim.log' -groupsize -1  # show one whole episode per click
-    python log_plotter.py -log 'roger-sim-24may.log' -groupsize 10
-    python log_plotter.py -log 'roger-sim-24may.log' -heatmap reward
-    python log_plotter.py -log 'roger-sim-24may.log' -heatmap speed
+    python log_plotter.py 'awslog-sim.log' -groupsize -1  # show one whole episode per click
+    python log_plotter.py 'roger-sim-24may.log' -groupsize 10
+    python log_plotter.py 'roger-sim-24may.log' -heatmap reward
+    python log_plotter.py 'roger-sim-24may.log' -heatmap speed
 """
 from argparse import ArgumentParser, ArgumentTypeError, RawTextHelpFormatter
 from collections import namedtuple
@@ -162,7 +162,7 @@ def valid_heatmap(heatmap):
 
 if __name__ == '__main__':
     parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
-    parser.add_argument('-log', type=valid_aws_log_file, required=True,
+    parser.add_argument('log', type=valid_aws_log_file,
                         help="AWS Log file containing 'SIM_TRACE_LOG' and 'Reset'")
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-groupsize', type=int, default=-1,
