@@ -11,6 +11,7 @@ Examples:
 from argparse import ArgumentParser, ArgumentTypeError, RawTextHelpFormatter
 from collections import namedtuple
 import matplotlib.pyplot as plt
+import numpy as np
 
 from data.reinvent2018 import track, waypoints
 from simlogparser import SimLogParser
@@ -49,6 +50,7 @@ class LogPlotter:
         self.plot_pts = self.parsed_log.plot_pts
         self.good_episode_list = tuple(self.parsed_log.good_episode_list)
         self.episode_data = self.parsed_log.episode_data
+        self.lap_times = self.parsed_log.lap_times
         self.plot()
 
     def _draw_lines(self, idx):
@@ -141,15 +143,28 @@ class LogPlotter:
         fig.canvas.draw()
 
     def plot(self):
-        fig = plt.figure(num=None, figsize=(20, 15), dpi=80, facecolor='w', edgecolor='k')
+        f1 = plt.figure(num=None, figsize=(20, 15), dpi=80, facecolor='w', edgecolor='k')
         plt.imshow(plt.imread(track), extent=[0, 8, 0, 5.2])
-        ax = fig.add_subplot(111)
+        ax1 = f1.add_subplot(111)
         if self.heatmap:
             self._draw_heatmap(0)
-            fig.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, cmap, ax, fig))
+            f1.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, cmap, ax1, f1))
         else:
             self._draw_lines(0)
-            fig.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, self.plot_pts, ax, fig))
+            f1.canvas.mpl_connect('key_press_event', lambda event: self.key_event(event, self.plot_pts, ax1, f1))
+
+        # plot lap times
+        f2 = plt.figure()
+        ax2 = f2.add_subplot(111)
+        ax2.set_title('Lap Times w/ Trend Line')
+        ax2.set_xlabel('Episode')
+        ax2.set_ylabel('Time(s)')
+        ax2.scatter(self.good_episode_list, self.lap_times)
+        # plot lap times trend line
+        z = np.polyfit(self.good_episode_list, self.lap_times, 1)
+        p = np.poly1d(z)
+        ax2.plot(self.good_episode_list, p(self.good_episode_list), "r--")
+
         plt.show()
 
 
