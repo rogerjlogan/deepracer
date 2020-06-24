@@ -72,6 +72,7 @@ class LogPlotter:
             plot_pts = ((episode, step, x, y, nearest_waypoint_idx, speed)
                         for (episode, step, x, y, nearest_waypoint_idx, speed, _)
                         in self.plot_pts[idx:idx + self.groupsize])
+            # FIXME: the index goes out of range and doesn't toggle left/right exactly correctly
             if self.plot_dir_right:
                 self.curr_pos += self.groupsize
             else:
