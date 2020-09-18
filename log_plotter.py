@@ -83,9 +83,9 @@ class LogPlotter:
                 plt.plot((x, x2), (y, y2), 'c--', linewidth=1)
             if speed == 4.0:
                 plt.plot(x, y, 'o', markersize=12, color='blue')
-            elif speed == 3.0:
+            elif speed == 3.2:
                 plt.plot(x, y, 'o', markersize=12, color='limegreen')
-            elif speed == 2.0:
+            elif speed == 2.5:
                 plt.plot(x, y, 'o', markersize=12, color='yellow')
             elif speed == 1.8:
                 plt.plot(x, y, 'o', markersize=12, color='orange')
@@ -103,7 +103,7 @@ class LogPlotter:
                 wpi_start = nearest_waypoint_idx
         plt.text(1.5, 2.6, f'Nearest Waypoint(black star)', fontsize=12)
         plt.text(1.5, 2.5, f'Log position of Car (square)', fontsize=12)
-        plt.text(1.5, 2.4, f'circle (fast to slow): blue, green, yellow, orange, red', fontsize=12)
+        plt.text(1.5, 2.4, f'circle (fast to slow): blue(4), green(3.2), yellow(2.5), orange(1.8), red(1.33)', fontsize=12)
         explain = '(displaying entire episode)' if self.groupsize == -1 else ''
         plt.text(1.5, 2.3, f'Groupsize: {self.groupsize} {explain}', fontsize=12)
 
