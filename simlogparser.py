@@ -7,6 +7,9 @@ from collections import namedtuple
 import pandas as pd
 import numpy as np
 from pprint import pprint
+from argparse import ArgumentParser, RawTextHelpFormatter
+
+from util.misc import valid_aws_log_file
 from data.reinvent2018 import target_points
 
 Row = namedtuple('logs', 'episode, step, x_coord, y_coord, heading, steering, speed, action_taken, reward, '
@@ -75,6 +78,7 @@ class SimLogParser:
                             best_heading = np.degrees(np.arctan2(y2 - df['y_coord'], x2 - df['x_coord']))
                             df['best_heading'] = best_heading
                             df['direction_diff'] = abs(((best_heading - df['heading']) + 180) % 360 - 180)
+                            # if df['step'].iloc[-1] < 107:
                             self.good_episodes.append(df)
 
     def _aggregate(self):
@@ -116,4 +120,8 @@ class SimLogParser:
 
 
 if __name__ == '__main__':
-    SimLogParser('roger-sim-24may.log')
+    parser = ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
+    parser.add_argument('log', type=valid_aws_log_file,
+                        help="AWS Log file containing 'SIM_TRACE_LOG' and 'Reset'")
+    args = parser.parse_args()
+    SimLogParser(args.log, verbose=True)

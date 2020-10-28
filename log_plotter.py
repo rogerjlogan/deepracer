@@ -22,6 +22,11 @@ from util.misc import valid_aws_log_file
 from data.reinvent2018_targets import target_points
 
 PLOT_LINES = False
+SPEED1 = 4.0
+SPEED2 = 3.5
+SPEED3 = 3.0
+SPEED4 = 1.5
+SPEED5 = 1.33
 
 Plots = namedtuple('Plots', 'nfp, idx, last_point_line, avg_angle_line, wtd_avg_angle_line, angle_type, num_points')
 
@@ -81,15 +86,15 @@ class LogPlotter:
             if PLOT_LINES:
                 x2, y2 = target_points[nearest_waypoint_idx]
                 plt.plot((x, x2), (y, y2), 'c--', linewidth=1)
-            if speed == 4.0:
+            if speed == SPEED1:
                 plt.plot(x, y, 'o', markersize=12, color='blue')
-            elif speed == 3.2:
+            elif speed == SPEED2:
                 plt.plot(x, y, 'o', markersize=12, color='limegreen')
-            elif speed == 2.5:
+            elif speed == SPEED3:
                 plt.plot(x, y, 'o', markersize=12, color='yellow')
-            elif speed == 1.8:
+            elif speed == SPEED4:
                 plt.plot(x, y, 'o', markersize=12, color='orange')
-            elif speed == 1.33:
+            elif speed == SPEED5:
                 plt.plot(x, y, 'o', markersize=12, color='red')
             else:
                 plt.plot(x, y, 'o', markersize=12, color='black')
@@ -103,7 +108,12 @@ class LogPlotter:
                 wpi_start = nearest_waypoint_idx
         plt.text(1.5, 2.6, f'Nearest Waypoint(black star)', fontsize=12)
         plt.text(1.5, 2.5, f'Log position of Car (square)', fontsize=12)
-        plt.text(1.5, 2.4, f'circle (fast to slow): blue(4), green(3.2), yellow(2.5), orange(1.8), red(1.33)', fontsize=12)
+        plt.text(1.5, 2.4, f'circle (fast to slow): '
+                           f'blue({SPEED1}), '
+                           f'green({SPEED2}), '
+                           f'yellow({SPEED3}), '
+                           f'orange({SPEED4}), '
+                           f'red({SPEED5})', fontsize=12)
         explain = '(displaying entire episode)' if self.groupsize == -1 else ''
         plt.text(1.5, 2.3, f'Groupsize: {self.groupsize} {explain}', fontsize=12)
 
@@ -171,10 +181,13 @@ class LogPlotter:
 
         # ---------
         # set right side axis
-        ax2b = ax2.twinx()
-        ax2b.set_ylabel('Steps')
-        ax2b.scatter(self.good_episode_list, self.steps)
-        ax2b.tick_params(axis='y')
+        # ax2b = ax2.twinx()
+        # ax2b.set_ylabel('Steps')
+        # print(len(self.good_episode_list), len(self.steps))
+        # if len(self.good_episode_list) > len(self.steps):
+        #     self.good_episode_list = self.good_episode_list[(len(self.good_episode_list) - len(self.steps)):]
+        # ax2b.scatter(self.good_episode_list, self.steps)
+        # ax2b.tick_params(axis='y')
         # ----------
 
         ax2.set_ylabel('Time(s)')
